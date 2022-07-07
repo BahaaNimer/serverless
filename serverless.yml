@@ -1,0 +1,33 @@
+service: s3-with-lambda
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  lambdaHashingVersion: 20201221
+  size: ${file(images.json):SIZE}
+  name: ${file(images.json):NAME}
+  iamRoleStatements:
+    - Effect: 'Allow'
+      Action:
+        - 's3:GetObject'
+        - 's3:GetObjectVersion'
+      Resource:
+        - 'arn:aws:s3:::${file(images.json):S3_BUCKET}/*'
+
+functions:
+  uploader:
+    handler: functions/handler.readS3File
+    events:
+      - s3:
+          bucket: ${file(images.json):S3_BUCKET}
+          event: s3:ObjectCreated:*
+          existing: true
+
+# you can add CloudFormation resource templates here
+resources:
+  Resources:
+    s3WithLambda:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${file(images.json):S3_BUCKET}
